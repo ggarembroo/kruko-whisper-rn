@@ -18,6 +18,27 @@ export interface TranscribeFileOptions extends TranscribeOptions {
     /** Callback when new segments are transcribed */
     onNewSegments?: (result: TranscribeNewSegmentsResult) => void;
 }
+/** Options for `transcribeData()`. */
+export interface TranscribeDataOptions extends TranscribeFileOptions {
+    /**
+     * Peak-amplitude gate in `0..1`. When set, a buffer whose peak sample is
+     * below this value is dropped without running inference, and the promise
+     * resolves with an empty result and `skipped: 'silence'`.
+     *
+     * whisper.cpp returns fluent, confident-looking text on pure silence, so on a
+     * fixed-length capture (a push-to-talk buffer, a VAD window) it is both
+     * cheaper and more honest not to call the engine at all.
+     */
+    silenceThreshold?: number;
+}
+/**
+ * Result of `transcribeData()`. `skipped` is set by the JavaScript layer, never
+ * by native code.
+ */
+export type TranscribeDataResult = TranscribeResult & {
+    /** Present only when the buffer was dropped before inference. */
+    skipped?: 'silence';
+};
 export type BenchResult = {
     config: string;
     nThreads: number;
@@ -44,11 +65,24 @@ export declare class WhisperContext {
         promise: Promise<TranscribeResult>;
     };
     /**
-     * Transcribe audio data (base64 encoded float32 PCM data or ArrayBuffer)
+     * Transcribe raw PCM audio.
+     *
+     * The audio must be **mono, 16 kHz, signed 16-bit PCM**. That is a hard
+     * requirement of the native path, which reads the buffer as `int16` and
+     * divides by 32767 — there is no float32 decoder on the JSI path. Hand it
+     * float32 bytes and every pair of float bytes is reinterpreted as a single
+     * int16 sample: you get twice as many samples of noise and, usually, an empty
+     * transcription with no error reported anywhere.
+     *
+     * To make that impossible to get wrong, a `Float32Array` in `-1..1` is
+     * accepted directly and converted here.
+     *
+     * @param data base64-encoded PCM string, `ArrayBuffer` of signed 16-bit PCM,
+     *   `Int16Array`, or `Float32Array` in `-1..1`.
      */
-    transcribeData(data: string | ArrayBuffer, options?: TranscribeFileOptions): {
+    transcribeData(data: string | ArrayBuffer | Int16Array | Float32Array, options?: TranscribeDataOptions): {
         stop: () => Promise<void>;
-        promise: Promise<TranscribeResult>;
+        promise: Promise<TranscribeDataResult>;
     };
     bench(maxThreads: number): Promise<BenchResult>;
     release(): Promise<void>;
@@ -138,7 +172,7 @@ export declare class WhisperVadContext {
      */
     detectSpeech(filePathOrBase64: string | number, options?: VadOptions): Promise<VadSegment[]>;
     /**
-     * Detect speech segments in raw audio data (base64 encoded float32 PCM data or ArrayBuffer)
+     * Detect speech segments in raw audio data (base64 encoded signed 16-bit PCM data or ArrayBuffer)
      */
     detectSpeechData(audioData: string | ArrayBuffer, options?: VadOptions): Promise<VadSegment[]>;
     release(): Promise<void>;
