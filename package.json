@@ -1,7 +1,7 @@
 {
   "name": "kruko-whisper-rn",
   "version": "1.0.0",
-  "description": "Hardened fork of whisper.rn for React Native. Adds a signed 16-bit PCM input guard, silence gating, and safe start/stop lifecycle handling.",
+  "description": "Hardened fork of whisper.rn for React Native. Adds a signed 16-bit PCM input guard and an opt-in silence gate.",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
   "types": "lib/typescript/index.d.ts",
@@ -50,7 +50,7 @@
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "build": "bob build",
-    "prepack": "yarn docgen && yarn build",
+    "prepack": "npm run build",
     "test": "jest",
     "release": "release-it",
     "example": "yarn --cwd example",
@@ -173,7 +173,6 @@
     "type": "modules",
     "jsSrcsDir": "src"
   },
-  "packageManager": "yarn@1.22.22",
   "dependencies": {
     "safe-buffer": "^5.2.1"
   }
