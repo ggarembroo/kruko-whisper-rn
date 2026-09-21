@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+yarn-error.log
+
+# build output from the example app
+example/node_modules/
+example/android/build/
+example/android/app/build/
+example/ios/build/
+example/ios/Pods/
+
+# native build output (the shipped ios/rnwhisper.xcframework is NOT ignored --
+# it is part of the published package)
+android/build/
+android/.cxx/
+android/local.properties
+ios/build/
+
+# misc
+.DS_Store
+*.log
+
+# credentials -- never commit these
+.npmrc
+.env
+.env.*
